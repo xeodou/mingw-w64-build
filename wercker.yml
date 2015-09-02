@@ -55,7 +55,7 @@ build:
 
               pkgname=openssl-${TARGET}-${WERCKER_GIT_BRANCH}
 
-              tar -zcvf "$HOME/$pkgname.tar.gz $HOME/$pkgname"
+              tar -zcvf "$HOME/$pkgname.tar.gz" "$HOME/$pkgname"
               curl \
               -H "Authorization: Basic ${BINTRAY_TOKEN}" \
               -H "Content-Type:application/octet-stream" \
