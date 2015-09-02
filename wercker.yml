@@ -1,0 +1,74 @@
+box: xeodou/golang-cross:latest
+
+build:
+    steps:
+      - script:
+          name: clone openssl project
+          code: |
+            cd $HOME
+            git clone https://github.com/openssl/openssl.git openssl
+            cd openssl
+            if [ "$WERCKER_GIT_BRANCH" != "master" ]; then
+                git checkout "OpenSSL_${WERCKER_GIT_BRANCH//./_}"
+            fi
+
+      - script:
+          name: build the openssl for mingw
+          code: |
+            cd $HOME/openssl
+            for MINGW in i686-w64-mingw32- x86_64-w64-mingw32-
+            do
+              case ${MINGW} in
+              (*i?86*) TARGET=mingw;;
+              (*x86_64*) TARGET=mingw64;;
+              (*) false;;
+              esac
+              if [ "$TARGET" != "mingw" ]; then
+                make clean
+              fi
+              ./Configure ${TARGET} no-asm no-shared --cross-compile-prefix=${MINGW} --prefix=$HOME/openssl-${TARGET}-${WERCKER_GIT_BRANCH}
+              make
+              make install
+            done
+
+deploy:
+    steps:
+      - script:
+          name: deploy to bintray.com
+          code: |
+            for TARGET in mingw mingw64
+            do
+              # Create package
+              curl \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Basic ${BINTRAY_TOKEN}" \
+              -X POST -d \
+              "{ \
+                \"name\": \"openssl-${WERCKER_GIT_BRANCH}\", \
+                \"desc\": \"openssl ${WERCKER_GIT_BRANCH}\", \
+                \"labels\": [\"openssl\", \"mingw\", \"windows\"], \
+                \"licenses\": [\"OpenSSL\"], \
+                \"vcs_url\": \"https://github.com/openssl/openssl.git\", \
+                \"website_url\": \"https://github.com/xeodou\", \
+                \"public_download_numbers\": true, \
+                \"public_stats\": true \
+              }" \
+              https://api.bintray.com/packages/xeodou/openssl
+
+              pkgname=openssl-${TARGET}-${WERCKER_GIT_BRANCH}
+
+              tar -zcvf "$HOME/$pkgname.tar.gz $HOME/$pkgname"
+              curl \
+              -H "Authorization: Basic ${BINTRAY_TOKEN}" \
+              -H "Content-Type:application/octet-stream" \
+              -H "X-Bintray-Package: openssl-${WERCKER_GIT_BRANCH}" \
+              -H "X-Bintray-Version: ${WERCKER_GIT_BRANCH}" \
+              -H "X-Bintray-Publish: 1" \
+              -H "X-Bintray-Override: 1" \
+              -H "X-Bintray-Explode: 1" \
+              -X PUT \
+              --trace-ascii "${pkgname}.tar.gz" \
+              --data-binary @"$HOME/$pkgname.tar.gz" \
+              https://api.bintray.com/content/xeodou/openssl/"${pkgname}.tar.gz"
+
+            done
