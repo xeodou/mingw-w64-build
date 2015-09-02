@@ -31,8 +31,6 @@ build:
               make install
             done
 
-deploy:
-    steps:
       - script:
           name: deploy to bintray.com
           code: |
