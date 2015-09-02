@@ -36,30 +36,17 @@ build:
           code: |
             for TARGET in mingw mingw64
             do
-              # Create package
-              curl \
-              -H "Content-Type: application/json" \
-              -H "Authorization: Basic ${BINTRAY_TOKEN}" \
-              -X POST -d \
-              "{ \
-                \"name\": \"openssl-${WERCKER_GIT_BRANCH}\", \
-                \"desc\": \"openssl ${WERCKER_GIT_BRANCH}\", \
-                \"labels\": [\"openssl\", \"mingw\", \"windows\"], \
-                \"licenses\": [\"OpenSSL\"], \
-                \"vcs_url\": \"https://github.com/openssl/openssl.git\", \
-                \"website_url\": \"https://github.com/xeodou\", \
-                \"public_download_numbers\": true, \
-                \"public_stats\": true \
-              }" \
-              https://api.bintray.com/packages/xeodou/openssl
 
+              # Compress files
               pkgname=openssl-${TARGET}-${WERCKER_GIT_BRANCH}
+              cd $HOME
+              tar -zcf $pkgname.tar.gz $pkgname
 
-              tar -zcvf "$HOME/$pkgname.tar.gz" "$HOME/$pkgname"
+              # Upload package to bintray
               curl \
               -H "Authorization: Basic ${BINTRAY_TOKEN}" \
               -H "Content-Type:application/octet-stream" \
-              -H "X-Bintray-Package: openssl-${WERCKER_GIT_BRANCH}" \
+              -H "X-Bintray-Package: ${BINTRAY_PACKAGE}" \
               -H "X-Bintray-Version: ${WERCKER_GIT_BRANCH}" \
               -H "X-Bintray-Publish: 1" \
               -H "X-Bintray-Override: 1" \

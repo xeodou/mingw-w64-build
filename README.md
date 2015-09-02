@@ -1,5 +1,7 @@
 # Automatic build for mingw openssl
 
+[![wercker status](https://app.wercker.com/status/58a778a55c11444226a4dbc2db74b83f/m "wercker status")](https://app.wercker.com/project/bykey/58a778a55c11444226a4dbc2db74b83f)
+
 ### Introduction
 
 The repo's branch looks like `1.0.1d` and this refer to the branch `OpeonSSL_1_0_1d` on Openssl here https://github.com/openssl/openssl.
