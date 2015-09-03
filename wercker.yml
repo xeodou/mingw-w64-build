@@ -26,8 +26,9 @@ build:
               if [ "$TARGET" != "mingw" ]; then
                 make clean
               fi
-              ./Configure ${TARGET} no-asm no-shared --cross-compile-prefix=${MINGW} --prefix=$HOME/openssl-${TARGET}-${WERCKER_GIT_BRANCH}
-              make
+              PREFIX=$HOME/openssl-${TARGET}-${WERCKER_GIT_BRANCH}
+              ./Configure ${TARGET} no-asm shared --cross-compile-prefix=${MINGW} --prefix=$PREFIX
+              PATH=$PATH:$PREFIX/bin make
               make install
             done
 
