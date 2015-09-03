@@ -3,13 +3,18 @@ box: xeodou/golang-cross:latest
 build:
     steps:
       - script:
+          name: get build version
+          code: |
+            VERSION=$(cat version)
+
+      - script:
           name: clone openssl project
           code: |
             cd $HOME
             git clone https://github.com/openssl/openssl.git openssl
             cd openssl
-            if [ "$WERCKER_GIT_BRANCH" != "master" ]; then
-                git checkout "OpenSSL_${WERCKER_GIT_BRANCH//./_}"
+            if [ "$VERSION" != "master" ]; then
+                git checkout "OpenSSL_${VERSION//./_}"
             fi
 
       - script:
@@ -26,9 +31,9 @@ build:
               if [ "$TARGET" != "mingw" ]; then
                 make clean
               fi
-              PREFIX=$HOME/openssl-${TARGET}-${WERCKER_GIT_BRANCH}
-              ./Configure ${TARGET} no-asm shared --cross-compile-prefix=${MINGW} --prefix=$PREFIX
-              PATH=$PATH:$PREFIX/bin make
+              PREFIX=$HOME/openssl-${TARGET}-${VERSION}
+              ./Configure ${TARGET} shared --cross-compile-prefix=${MINGW} --prefix=$PREFIX
+              make depend && make
               make install
             done
 
@@ -39,22 +44,22 @@ build:
             do
 
               # Compress files
-              pkgname=openssl-${TARGET}-${WERCKER_GIT_BRANCH}
+              pkgname=openssl-${TARGET}-${VERSION}
               cd $HOME
-              tar -zcf $pkgname.tar.gz $pkgname
+              zip $pkgname.zip $pkgname
 
               # Upload package to bintray
               curl \
               -H "Authorization: Basic ${BINTRAY_TOKEN}" \
               -H "Content-Type:application/octet-stream" \
               -H "X-Bintray-Package: ${BINTRAY_PACKAGE}" \
-              -H "X-Bintray-Version: ${WERCKER_GIT_BRANCH}" \
+              -H "X-Bintray-Version: ${VERSION}" \
               -H "X-Bintray-Publish: 1" \
               -H "X-Bintray-Override: 1" \
               -H "X-Bintray-Explode: 1" \
               -X PUT \
-              --trace-ascii "${pkgname}.tar.gz" \
-              --data-binary @"$HOME/$pkgname.tar.gz" \
-              https://api.bintray.com/content/xeodou/openssl/"${pkgname}.tar.gz"
+              --trace-ascii "${pkgname}.zip" \
+              --data-binary @"$HOME/$pkgname.zip" \
+              https://api.bintray.com/content/xeodou/openssl/"${pkgname}.zip"
 
             done
